@@ -16,7 +16,7 @@ pub struct MetaData {
 }
 
 #[derive(Debug, Deserialize, Serialize)]
-struct Package {
+pub struct Package {
     name: String,
     version: String,
     id: String,
@@ -44,7 +44,7 @@ struct Package {
 }
 
 #[derive(Debug, Deserialize, Serialize)]
-struct Dependency {
+pub struct Dependency {
     name: String,
     source: Option<String>,
     req: String,
@@ -59,7 +59,7 @@ struct Dependency {
 }
 
 #[derive(Debug, Deserialize, Serialize)]
-struct Target {
+pub struct Target {
     kind: Option<Vec<String>>, /// "bin" "lib" "bench" "example" "test" "custom-build"
     crate_types: Option<Vec<String>>,
     name: String,
@@ -73,13 +73,13 @@ struct Target {
 }
 
 #[derive(Debug, Deserialize, Serialize)]
-struct Resolve {
+pub struct Resolve {
     nodes: Option<Vec<Node>>,
     root: Option<String>,
 }
 
 #[derive(Debug, Deserialize, Serialize)]
-struct Node{
+pub struct Node{
     id: String,
     dependencies: Option<Vec<String>>,
     deps: Option<Vec<Dep>>,
@@ -87,14 +87,14 @@ struct Node{
 }
 
 #[derive(Debug, Deserialize, Serialize)]
-struct Dep {
+pub struct Dep {
     name: String,
     pkg: String,
     dep_kinds: Option<Vec<DepKind>>,
 }
 
 #[derive(Debug, Deserialize, Serialize)]
-struct DepKind {
+pub struct DepKind {
     kind: Option<String>,
     target: Option<String>,
 }

@@ -4,7 +4,7 @@ use ffi_checker::metadata::MetaData;
 
 use log::{debug, info};
 
-
+// 获取cargo metadata提供的信息
 fn get_cargo_metadata() -> Result<MetaData, std::io::Error>{
     let output = Command::new("cargo")
         .arg("metadata")
