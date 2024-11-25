@@ -3,6 +3,7 @@ use std::process::Command;
 use ffi_checker::metadata::MetaData;
 
 use log::{debug, info};
+use ffi_checker::utils::compile_targets;
 
 // 获取cargo metadata提供的信息
 fn get_cargo_metadata() -> Result<MetaData, std::io::Error>{
@@ -29,4 +30,14 @@ fn main() {
     debug!("debug ffi checker");
     let metadata = get_cargo_metadata().unwrap();
     debug!("{}", serde_json::to_string_pretty(&metadata).unwrap());
+    if std::env::args().nth(1).unwrap().as_ref().to_string().contains("rustc")
+        // && std::env::args().nth(1).unwrap().as_ref().to_string().contains(".rustup")
+    {
+        info!("start compiling");
+
+    }
+    // if "ffi-checker" == std::env::args().nth(1).unwrap().as_str() {
+    let mut ffi_args = Vec::new();
+    compile_targets(metadata, &mut ffi_args);
+    //}
 }

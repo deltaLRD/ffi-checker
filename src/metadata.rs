@@ -4,97 +4,97 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
 
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct MetaData {
-    packages: Option<Vec<Package>>,
-    workspace_members: Option<Vec<String>>,
-    resolve: Option<Resolve>,
-    target_directory: String,
-    version: i32,
-    workspace_root: String,
-    metadata: Value,
+    pub packages: Option<Vec<Package>>,
+    pub workspace_members: Option<Vec<String>>,
+    pub resolve: Option<Resolve>,
+    pub target_directory: String,
+    pub version: i32,
+    pub workspace_root: String,
+    pub metadata: Value,
 }
 
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct Package {
-    name: String,
-    version: String,
-    id: String,
-    license: Option<String>,
-    license_file: Option<String>,
-    description: Option<String>,
-    source: Option<String>,
-    dependencies: Option<Vec<Dependency>>,
-    targets: Option<Vec<Target>>,
-    features: BTreeMap<String, Option<Vec<String>>>,
-    manifest_path: String,
-    metadata: Value,
-    publish: Option<Vec<String>>,
-    authors: Option<Vec<String>>,
-    categories: Option<Vec<String>>,
-    default_run: Option<String>,
-    rust_version: Option<String>,
-    keywords: Option<Vec<String>>,
-    readme: Option<String>,
-    repository: Option<String>,
-    homepage: Option<String>,
-    documentation: Option<String>,
-    edition: String,
-    links: Option<String>,
+    pub name: String,
+    pub version: String,
+    pub id: String,
+    pub license: Option<String>,
+    pub license_file: Option<String>,
+    pub description: Option<String>,
+    pub source: Option<String>,
+    pub dependencies: Option<Vec<Dependency>>,
+    pub targets: Option<Vec<Target>>,
+    pub features: BTreeMap<String, Option<Vec<String>>>,
+    pub manifest_path: String,
+    pub metadata: Value,
+    pub publish: Option<Vec<String>>,
+    pub authors: Option<Vec<String>>,
+    pub categories: Option<Vec<String>>,
+    pub default_run: Option<String>,
+    pub rust_version: Option<String>,
+    pub keywords: Option<Vec<String>>,
+    pub readme: Option<String>,
+    pub repository: Option<String>,
+    pub homepage: Option<String>,
+    pub documentation: Option<String>,
+    pub edition: String,
+    pub links: Option<String>,
 }
 
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct Dependency {
-    name: String,
-    source: Option<String>,
-    req: String,
-    kind: Option<String>, /// "dev" "build" "null"
-    rename: Option<String>,
-    optional: bool,
-    uses_default_features: bool,
-    features: Option<Vec<String>>,
-    target: Option<String>,
-    path: Option<String>,
-    registry: Option<String>,
+    pub name: String,
+    pub source: Option<String>,
+    pub req: String,
+    pub kind: Option<String>, /// "dev" "build" "null"
+    pub rename: Option<String>,
+    pub optional: bool,
+    pub uses_default_features: bool,
+    pub features: Option<Vec<String>>,
+    pub target: Option<String>,
+    pub path: Option<String>,
+    pub registry: Option<String>,
 }
 
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct Target {
-    kind: Option<Vec<String>>, /// "bin" "lib" "bench" "example" "test" "custom-build"
-    crate_types: Option<Vec<String>>,
-    name: String,
-    src_path: String,
-    edition: String,
+    pub kind: Option<Vec<String>>, /// "bin" "lib" "bench" "example" "test" "custom-build"
+    pub crate_types: Option<Vec<String>>,
+    pub name: String,
+    pub src_path: String,
+    pub edition: String,
     #[serde(rename = "required-features")]
-    required_features: Option<Vec<String>>,
-    doc: bool,
-    doctest: bool,
-    test: bool,
+    pub required_features: Option<Vec<String>>,
+    pub doc: bool,
+    pub doctest: bool,
+    pub test: bool,
 }
 
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct Resolve {
-    nodes: Option<Vec<Node>>,
-    root: Option<String>,
+    pub nodes: Option<Vec<Node>>,
+    pub root: Option<String>,
 }
 
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct Node{
-    id: String,
-    dependencies: Option<Vec<String>>,
-    deps: Option<Vec<Dep>>,
-    features: Option<Vec<String>>,
+    pub id: String,
+    pub dependencies: Option<Vec<String>>,
+    pub deps: Option<Vec<Dep>>,
+    pub features: Option<Vec<String>>,
 }
 
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct Dep {
-    name: String,
-    pkg: String,
-    dep_kinds: Option<Vec<DepKind>>,
+    pub name: String,
+    pub pkg: String,
+    pub dep_kinds: Option<Vec<DepKind>>,
 }
 
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct DepKind {
-    kind: Option<String>,
-    target: Option<String>,
+    pub kind: Option<String>,
+    pub target: Option<String>,
 }
