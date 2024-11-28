@@ -30,24 +30,11 @@ fn main() {
     debug!("args: {:?}", std::env::args());
     info!("start ffi checker");
     debug!("debug ffi checker");
-    if  std::env::args().len() > 1 && std::env::args().nth(1).unwrap().to_string().contains("rustc")
-    // && std::env::args().nth(1).unwrap().as_ref().to_string().contains(".rustup")
-    {
-        info!("start compiling \n{:?}", std::env::args());
-        return;
-    }
+    info!("start ffi checker");
 
-    if std::env::args().len() > 1 && std::env::args().nth(1).unwrap().as_str() == "ffi-checker" {
-        info!("start ffi checker");
-        let metadata = get_cargo_metadata().unwrap();
-        let mut ffi_args = Vec::new();
-        compile_targets(metadata, &mut ffi_args);
-    }
+    let metadata = get_cargo_metadata().unwrap();
+    let mut ffi_args = Vec::new();
+    compile_targets(metadata, &mut ffi_args);
+    
 
-    if std::env::args().len() > 1 && std::env::args().nth(1).unwrap().as_str() == "rustc" {
-        info!("start compiling \n{:?}", std::env::args());
-    }
-    // debug!("{}", serde_json::to_string_pretty(&metadata).unwrap());
-    // if "ffi-checker" == std::env::args().nth(1).unwrap().as_str() {
-    //}
 }
