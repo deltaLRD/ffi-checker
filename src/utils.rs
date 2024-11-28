@@ -60,6 +60,7 @@ pub fn compile_targets(metadata: MetaData, ffi_args: &mut Vec<String>) {
         );
 
         let path = std::env::current_exe().expect("Failed to get current executable path");
+        
         cmd.env("RUSTC_WRAPPER", path.to_str().unwrap());
         info!("Setting env: RUSTC_WRAPPER={:?}", path);
         cmd.env(
