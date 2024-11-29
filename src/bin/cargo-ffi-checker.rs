@@ -16,7 +16,6 @@ fn get_cargo_metadata() -> Result<MetaData, std::io::Error>{
         .output()
         .expect("run cmd error:\"cargo metadata -q --format-verson 1\"");
     if output.status.success() {
-        // debug!("{:?}", str::from_utf8(&output.stdout).unwrap());
         let metadata: MetaData = serde_json::from_str(str::from_utf8(&output.stdout).unwrap()).unwrap();
         Ok(metadata)
     } else {
@@ -35,6 +34,6 @@ fn main() {
     let metadata = get_cargo_metadata().unwrap();
     let mut ffi_args = Vec::new();
     compile_targets(metadata, &mut ffi_args);
-    
+
 
 }

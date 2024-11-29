@@ -1,5 +1,13 @@
 # ffi-checker
 
+0. (如果需要) 删除系统中已有的 LLVM
+
+以 Ubuntu apt 安装的 llvm 为例
+```bash
+sudo apt list --installed | grep llvm
+sudo apt remove ****
+```
+
 1. Download LLVM
 
 https://github.com/llvm/llvm-project/releases/ 到这里下载最新的预编译包，
@@ -36,4 +44,4 @@ git clone https://github.com/sigoden/iredismodule.git
 cd iredismodule
 ~/ffi-checker/target/release/cargo-ffi-checker
 ```
-等待结束就可以在 ~/iredismodule/target/debug/deps 里面看到 .ll 的 llvm-ir 文件
+等待结束就可以在 ~/iredismodule/target/debug/deps 里面看到 .bc 的 llvm bitcode 文件

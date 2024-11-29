@@ -1,18 +1,21 @@
+use crate::metadata::{MetaData, Package};
 use core::str;
-use std::process::Command;
 use log::{info, warn};
 use serde::{Deserialize, Serialize};
-use crate::metadata::{MetaData, Package};
+use std::process::Command;
 
 #[derive(Debug, Deserialize, Serialize)]
 struct RootPath {
-    root: String
+    root: String,
 }
 
-pub fn get_proj_path() -> String{
-    let res = Command::new("cargo").arg("locate-project").output().unwrap();
+pub fn get_proj_path() -> String {
+    let res = Command::new("cargo")
+        .arg("locate-project")
+        .output()
+        .unwrap();
     let binding = res.stdout.to_vec();
-    let res= str::from_utf8(&binding).unwrap();
+    let res = str::from_utf8(&binding).unwrap();
     let res: RootPath = serde_json::from_str(res).unwrap();
     res.root.to_owned()
 }
@@ -35,14 +38,14 @@ pub fn compile_targets(metadata: MetaData, ffi_args: &mut Vec<String>) {
         cmd.arg("rustc");
         let mut args = std::env::args().skip(2);
         let kind = target.clone().kind.unwrap();
-        match  kind[0].as_str() {
+        match kind[0].as_str() {
             "bin" => {
                 cmd.arg("--bin").arg(target.name.clone());
             }
             "lib" => {
                 cmd.arg("--lib");
             }
-            _ => continue
+            _ => continue,
         }
         while let Some(arg) = args.next() {
             if arg == "--" {
@@ -59,11 +62,9 @@ pub fn compile_targets(metadata: MetaData, ffi_args: &mut Vec<String>) {
             target.name.clone()
         );
 
-        let path = std::env::current_exe().expect("Failed to get current executable path");
-        
         cmd.env(
             "RUSTFLAGS",
-            "-Clinker-plugin-lto -Clinker=clang -Clink-arg=-fuse-ld=lld --emit=llvm-ir",
+            "-Clinker-plugin-lto -Clinker=clang -Clink-arg=-fuse-ld=lld --emit=llvm-bc",
         );
         cmd.env("CC", "clang");
         cmd.env("CFLAGS", "-flto=thin");
@@ -74,14 +75,16 @@ pub fn compile_targets(metadata: MetaData, ffi_args: &mut Vec<String>) {
         let res = cmd.output().unwrap();
         if !res.status.success() {
             warn!("Command line failed with status: {}", res.status);
-            println!("Command line stdout: {}", str::from_utf8(&res.stdout).unwrap());
-            println!("Command line stderr: {}", str::from_utf8(&res.stderr).unwrap());
+            println!(
+                "Command line stdout: {}",
+                str::from_utf8(&res.stdout).unwrap()
+            );
+            println!(
+                "Command line stderr: {}",
+                str::from_utf8(&res.stderr).unwrap()
+            );
             std::process::exit(res.status.code().unwrap_or(-1));
         }
     }
-
 }
 
-pub fn compile_target() {
-
-}
