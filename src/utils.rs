@@ -103,7 +103,7 @@ mod tests {
             greet();
             let ptr: *mut libc::c_void = get_n_mem(1024);
             libc::free(ptr);
-            ptr[0] = 10;
+            *ptr = 10;
         }
     }
 }
