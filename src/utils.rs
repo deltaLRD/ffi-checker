@@ -61,14 +61,14 @@ pub fn compile_targets(metadata: MetaData, ffi_args: &mut Vec<String>) {
             "Setting env: FFI_CHECKER_TOP_CRATE_NAME={}",
             target.name.clone()
         );
-
+        // linux only
         cmd.env(
             "RUSTFLAGS",
-            "-Clinker-plugin-lto -Clinker=clang -Clink-arg=-fuse-ld=lld --emit=llvm-bc",
+            "-Clinker-plugin-lto -Clinker=clang -Clink-arg=-fuse-ld=lld --emit=llvm-ir,llvm-bc,mir",
         );
         cmd.env("CC", "clang");
         cmd.env("CFLAGS", "-flto=thin");
-        cmd.env("LDFLAGS", "-Wl,-O2 -Wl,--as-needed");
+        cmd.env("LDFLAGS", "-Wl,-O2,--as-needed");
 
         info!("Command line: {:?}", cmd);
 
@@ -88,3 +88,10 @@ pub fn compile_targets(metadata: MetaData, ffi_args: &mut Vec<String>) {
     }
 }
 
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn test_ffi() {
+        
+    }
+}

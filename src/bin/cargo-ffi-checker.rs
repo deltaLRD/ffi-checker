@@ -34,6 +34,6 @@ fn main() {
     let metadata = get_cargo_metadata().unwrap();
     let mut ffi_args = Vec::new();
     compile_targets(metadata, &mut ffi_args);
-
+    debug!("{:?}", &ffi_args);
 
 }
