@@ -90,8 +90,18 @@ pub fn compile_targets(metadata: MetaData, ffi_args: &mut Vec<String>) {
 
 #[cfg(test)]
 mod tests {
+
+    #[link(name = "test1")]
+    extern "C" {
+        fn greet();
+        fn get_n_mem(n: libc::c_int) -> *mut libc::c_void;
+    }
+
     #[test]
     fn test_ffi() {
-        
+        unsafe {
+            greet();
+            let ptr: *mut libc::c_void = get_n_mem(1024);
+        }
     }
 }
