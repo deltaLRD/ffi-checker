@@ -1,5 +1,6 @@
 #include "stdio.h"
 #include "stdlib.h"
+#include "test1.h"
 
 void greet() {
     printf("Hello, World!\n");
