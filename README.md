@@ -19,7 +19,7 @@ https://github.com/llvm/llvm-project/releases/ 到这里下载最新的预编译
 cd ~
 wget https://github.com/llvm/llvm-project/releases/download/llvmorg-19.1.4/LLVM-19.1.4-Linux-X64.tar.xz
 tar -xvf LLVM-19.1.4-Linux-X64.tar.xz
-echo "export PATH="\$PATH:$HOME/LLVM-19.1.4-Linux/bin"" >> .bashrc
+echo "export PATH="\$PATH:$HOME/LLVM-19.1.4-Linux-X64/bin"" >> .bashrc
 source .bashrc
 clang --version
 ```
