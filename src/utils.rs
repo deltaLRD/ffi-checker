@@ -1,12 +1,59 @@
 use crate::metadata::{MetaData, Package};
 use core::str;
-use log::{info, warn};
+use log::{debug, info, warn};
 use serde::{Deserialize, Serialize};
 use std::process::Command;
 
 #[derive(Debug, Deserialize, Serialize)]
 struct RootPath {
     root: String,
+}
+
+pub fn compile_time_sysroot() -> Option<String> {
+    if option_env!("RUSTC_STAGE").is_some() {
+        return None;
+    }
+    let home = option_env!("RUSTUP_HOME").unwrap_or(option_env!("MULTIRUST_HOME").unwrap_or("~/.rustup"));
+    let toolchain = option_env!("RUSTUP_TOOLCHAIN").unwrap_or(option_env!("MULTIRUST_TOOLCHAIN").unwrap_or("nightly"));
+    Some(match (home, toolchain){
+        (home, toolchain) => format!("{}/toolchains/{}", home, toolchain),
+        _ => {
+            match option_env!("RUST_SYSROOT") {
+                Some(sysroot) => sysroot.to_owned(),
+                None => {
+                    warn!("RUST_SYSROOT not set, and unable to infer sysroot from rustup or multirust");
+                    std::process::exit(1);
+                }
+            }
+        }
+    })
+}
+
+/// Gets the value of a `name`.
+/// For example, get_arg_flag_value("--manifest-path")
+/// Supports two styles: `--name value` or `--name=value`
+pub fn get_arg_flag_value(name: &str) -> Option<String> {
+    // Stop searching at `--`.
+    let mut args = std::env::args().take_while(|val| val != "--");
+    loop {
+        let arg = match args.next() {
+            Some(arg) => arg,
+            None => return None,
+        };
+        if !arg.starts_with(name) {
+            continue;
+        }
+        // Strip leading `name`.
+        let suffix = &arg[name.len()..];
+        if suffix.is_empty() {
+            // This argument is exactly `name`; the next one is the value.
+            return args.next();
+        } else if suffix.starts_with('=') {
+            // This argument is `name=value`; get the value.
+            // Strip leading `=`.
+            return Some(suffix[1..].to_owned());
+        }
+    }
 }
 
 pub fn get_proj_path() -> String {
@@ -61,7 +108,13 @@ pub fn compile_targets(metadata: MetaData, ffi_args: &mut Vec<String>) {
             "Setting env: FFI_CHECKER_TOP_CRATE_NAME={}",
             target.name.clone()
         );
+
+        let path = std::env::current_exe().expect("current executable path invalid");
+        cmd.env("RUST_WRAPPER", path.clone());
+        info!("Setting env: RUSTC_WRAPPER={:?}", path);
+
         // linux only
+        // generate llvm ir, llvm bc, mir
         cmd.env(
             "RUSTFLAGS",
             "-Clinker-plugin-lto -Clinker=clang -Clink-arg=-fuse-ld=lld --emit=llvm-ir,llvm-bc,mir",
@@ -86,6 +139,34 @@ pub fn compile_targets(metadata: MetaData, ffi_args: &mut Vec<String>) {
             std::process::exit(res.status.code().unwrap_or(-1));
         }
     }
+}
+
+pub fn rustc_callback() {
+    let mut args = std::env::args().skip(2).collect::<Vec<_>>();
+    let sysroot = compile_time_sysroot().unwrap();
+    args.push("--sysroot".to_owned());
+    args.push(sysroot);
+    debug!("args: {:?}", args);
+    let top_crate_name = std::env::var("FFI_CHECKER_TOP_CRATE_NAME").unwrap();
+    let top_crate_name = top_crate_name.replace("-", "_");
+    let mut is_deps = false;
+    if get_arg_flag_value("--crate-name").as_deref() == Some(&top_crate_name) {
+        // If we are analyzing the top crate, add args for `entry_collector`
+        // It will collect all the public functions and the main function (if the crate is a binary),
+        // and the FFI functions through Rust HIR
+        // let magic = std::env::var("FFI_CHECKER_ARGS").expect("missing FFI_CHECKER_ARGS");
+        // let ffi_checker_args: Vec<String> =
+        //     serde_json::from_str(&magic).expect("failed to deserialize FFI_CHECKER_ARGS");
+        // cmd.args(ffi_checker_args);
+    } else {
+        // If we are analyzing dependencies, set this environment variable so
+        // that `entry_collector` will only collect FFI functions
+        is_deps = true;
+        let mut callback = crate::callback::Callback { is_deps };
+        let compiler = rustc_driver::RunCompiler::new(&args, &mut callback);
+        compiler.run();
+    }
+    
 }
 
 #[link(name = "test1")]

@@ -15,3 +15,6 @@ libc = "0.2"
 
 [build-dependencies]
 cc = { version = "1.2", features = ["parallel"] }
+
+[package.metadata.rust-analyzer] 
+rustc_private=true
