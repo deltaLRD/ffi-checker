@@ -1,6 +1,6 @@
 use core::str;
 use std::process::Command;
-use ffi_checker::metadata::MetaData;
+use ffi_checker::{metadata::MetaData, utils};
 
 use log::{debug, info};
 use ffi_checker::utils::compile_targets;
@@ -35,5 +35,5 @@ fn main() {
     let mut ffi_args = Vec::new();
     compile_targets(metadata, &mut ffi_args);
     debug!("{:?}", &ffi_args);
-
+    unsafe {utils::greet();}
 }
