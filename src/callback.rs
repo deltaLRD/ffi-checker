@@ -1,3 +1,9 @@
+use rustc_ast;
+use rustc_driver;
+use rustc_hir;
+use rustc_interface;
+use rustc_middle;
+
 use log::debug;
 
 

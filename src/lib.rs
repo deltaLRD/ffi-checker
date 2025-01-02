@@ -1,5 +1,4 @@
 #![feature(rustc_private)]
-
 extern crate rustc_ast;
 extern crate rustc_ast_pretty;
 extern crate rustc_data_structures;
@@ -12,6 +11,7 @@ extern crate rustc_interface;
 extern crate rustc_middle;
 extern crate rustc_session;
 extern crate rustc_span;
+
 pub mod metadata;
 pub mod utils;
 pub mod callback;

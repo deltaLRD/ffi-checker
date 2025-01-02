@@ -17,15 +17,6 @@ pub fn compile_time_sysroot() -> Option<String> {
     let toolchain = option_env!("RUSTUP_TOOLCHAIN").unwrap_or(option_env!("MULTIRUST_TOOLCHAIN").unwrap_or("nightly"));
     Some(match (home, toolchain){
         (home, toolchain) => format!("{}/toolchains/{}", home, toolchain),
-        _ => {
-            match option_env!("RUST_SYSROOT") {
-                Some(sysroot) => sysroot.to_owned(),
-                None => {
-                    warn!("RUST_SYSROOT not set, and unable to infer sysroot from rustup or multirust");
-                    std::process::exit(1);
-                }
-            }
-        }
     })
 }
 

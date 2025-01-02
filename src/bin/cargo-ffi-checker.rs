@@ -1,3 +1,4 @@
+#![feature(rustc_private)]
 use core::str;
 use std::process::Command;
 use ffi_checker::{metadata::MetaData, utils};
