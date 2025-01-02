@@ -13,7 +13,9 @@ pub struct Callback {
 }
 
 impl rustc_driver::Callbacks for Callback {
-    fn config(&mut self, _config: &mut rustc_interface::interface::Config) {}
+    fn config(&mut self, _config: &mut rustc_interface::interface::Config) {
+        pretty_env_logger::init();
+    }
 
     fn after_crate_root_parsing(
         &mut self,
