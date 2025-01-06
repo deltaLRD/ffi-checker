@@ -1,13 +1,14 @@
 #![feature(rustc_private)]
+extern crate rustc_driver;
 use core::str;
-use std::process::Command;
 use ffi_checker::{metadata::MetaData, utils};
+use std::process::Command;
 
-use log::{debug, info};
 use ffi_checker::utils::compile_targets;
+use log::{debug, info};
 
 // 获取cargo metadata提供的信息
-fn get_cargo_metadata() -> Result<MetaData, std::io::Error>{
+fn get_cargo_metadata() -> Result<MetaData, std::io::Error> {
     debug!("get cargo metadata");
     let output = Command::new("cargo")
         .arg("metadata")
@@ -17,24 +18,30 @@ fn get_cargo_metadata() -> Result<MetaData, std::io::Error>{
         .output()
         .expect("run cmd error:\"cargo metadata -q --format-verson 1\"");
     if output.status.success() {
-        let metadata: MetaData = serde_json::from_str(str::from_utf8(&output.stdout).unwrap()).unwrap();
+        let metadata: MetaData =
+            serde_json::from_str(str::from_utf8(&output.stdout).unwrap()).unwrap();
         Ok(metadata)
     } else {
-        Err(std::io::Error::new(std::io::ErrorKind::InvalidInput, "metadata input invalid"))
+        Err(std::io::Error::new(
+            std::io::ErrorKind::InvalidInput,
+            "metadata input invalid",
+        ))
     }
 }
 
 fn main() {
     std::env::set_var("RUST_LOG", "debug");
-    pretty_env_logger::init();
+    std::env::set_var("RUST_BACKTRACE", "1");
+    pretty_env_logger::init_timed();
+
     debug!("args: {:?}", std::env::args());
-    info!("start ffi checker");
-    debug!("debug ffi checker");
     info!("start ffi checker");
 
     let metadata = get_cargo_metadata().unwrap();
     let mut ffi_args = Vec::new();
     compile_targets(metadata, &mut ffi_args);
     debug!("{:?}", &ffi_args);
-    unsafe {utils::greet();}
+    unsafe {
+        utils::greet();
+    }
 }

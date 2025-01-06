@@ -6,7 +6,6 @@ use rustc_hir;
 use rustc_interface;
 use rustc_middle;
 
-
 #[derive(Debug)]
 pub struct Callback {
     pub is_deps: bool,
@@ -14,9 +13,7 @@ pub struct Callback {
 }
 
 impl rustc_driver::Callbacks for Callback {
-    fn config(&mut self, _config: &mut rustc_interface::interface::Config) {
-        
-    }
+    fn config(&mut self, _config: &mut rustc_interface::interface::Config) {}
 
     fn after_crate_root_parsing(
         &mut self,
@@ -46,10 +43,10 @@ impl rustc_driver::Callbacks for Callback {
         for id in hir.items() {
             let item = hir.item(id);
             match self.log_file.write(format!("{:?}\n", &item).as_bytes()) {
-                Ok(_) => {},
+                Ok(_) => {}
                 Err(e) => {
                     log::warn!("{}", e);
-                },
+                }
             }
             // if let rustc_hir::ItemKind::ForeignMod { abi, items } = item.kind {
             //     debug!("abi: {:?}, items: {:?}", &abi, &items);

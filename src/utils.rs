@@ -2,7 +2,7 @@ use crate::metadata::{MetaData, Package};
 use core::str;
 use log::{debug, info, warn};
 use serde::{Deserialize, Serialize};
-use std::process::Command;
+use std::{fs::File, io::Write, process::Command};
 
 #[derive(Debug, Deserialize, Serialize)]
 struct RootPath {
@@ -13,11 +13,52 @@ pub fn compile_time_sysroot() -> Option<String> {
     if option_env!("RUSTC_STAGE").is_some() {
         return None;
     }
-    let home = option_env!("RUSTUP_HOME").unwrap_or(option_env!("MULTIRUST_HOME").unwrap_or("~/.rustup"));
-    let toolchain = option_env!("RUSTUP_TOOLCHAIN").unwrap_or(option_env!("MULTIRUST_TOOLCHAIN").unwrap_or("nightly"));
-    Some(match (home, toolchain){
+    let home =
+        option_env!("RUSTUP_HOME").unwrap_or(option_env!("MULTIRUST_HOME").unwrap_or("~/.rustup"));
+    let toolchain = option_env!("RUSTUP_TOOLCHAIN")
+        .unwrap_or(option_env!("MULTIRUST_TOOLCHAIN").unwrap_or("nightly"));
+    Some(match (home, toolchain) {
         (home, toolchain) => format!("{}/toolchains/{}", home, toolchain),
     })
+}
+
+pub fn arg_is_exist(name: &str) -> bool {
+    let mut args = std::env::args().into_iter();
+    loop {
+        let arg = match args.next() {
+            Some(arg) => arg,
+            None => {
+                return false;
+            }
+        };
+        if !arg.ends_with(name) {
+            continue;
+        } else {
+            return true;
+        }
+    }
+}
+
+pub fn get_now_log_file() -> File {
+    let now = std::time::SystemTime::now();
+    let now_str = now
+        .duration_since(std::time::UNIX_EPOCH)
+        .unwrap()
+        .as_nanos();
+    let log_file =
+        std::fs::File::create_new(format!("./logs/ffi_checker_{}.log", now_str)).unwrap();
+    log_file
+}
+
+pub fn file_log(s: &str) {
+    let now = std::time::SystemTime::now();
+    let now_str = now
+        .duration_since(std::time::UNIX_EPOCH)
+        .unwrap()
+        .as_nanos();
+    let mut log_file =
+        std::fs::File::create_new(format!("./logs/ffi_checker_{}.log", now_str)).unwrap();
+    log_file.write(format!("{}\n", &s).as_bytes()).unwrap();
 }
 
 /// Gets the value of a `name`.
@@ -78,13 +119,20 @@ pub fn compile_targets(metadata: MetaData, ffi_args: &mut Vec<String>) {
         let kind = target.clone().kind.unwrap();
         match kind[0].as_str() {
             "bin" => {
-                cmd.arg("--bin").arg(target.name.clone());
+                cmd
+                    // .arg("--crate-type")
+                    .arg("--bin")
+                    // .arg("--crate-name")
+                    .arg(target.name.clone());
             }
             "lib" => {
                 cmd.arg("--lib");
             }
             _ => continue,
         }
+        // -Z unpretty=hir-tree
+        // -Z unpretty=thir-tree
+        cmd.arg("--").arg("-Z").arg("unpretty=thir-tree");
         while let Some(arg) = args.next() {
             if arg == "--" {
                 break;
@@ -101,8 +149,8 @@ pub fn compile_targets(metadata: MetaData, ffi_args: &mut Vec<String>) {
         );
 
         let path = std::env::current_exe().expect("current executable path invalid");
-        cmd.env("RUST_WRAPPER", path.clone());
-        info!("Setting env: RUSTC_WRAPPER={:?}", path);
+        // cmd.env("RUSTC_WRAPPER", path.clone());
+        // info!("Setting env: RUSTC_WRAPPER={:?}", path);
 
         // linux only
         // generate llvm ir, llvm bc, mir
@@ -117,6 +165,7 @@ pub fn compile_targets(metadata: MetaData, ffi_args: &mut Vec<String>) {
         info!("Command line: {:?}", cmd);
 
         let res = cmd.output().unwrap();
+
         if !res.status.success() {
             warn!("Command line failed with status: {}", res.status);
             println!(
@@ -128,42 +177,11 @@ pub fn compile_targets(metadata: MetaData, ffi_args: &mut Vec<String>) {
                 str::from_utf8(&res.stderr).unwrap()
             );
             std::process::exit(res.status.code().unwrap_or(-1));
+        } else {
+            let output = str::from_utf8(&res.stdout).unwrap();
+            file_log(&output);
         }
     }
-}
-
-pub fn rustc_callback() {
-    let mut args = std::env::args().skip(2).collect::<Vec<_>>();
-    let sysroot = compile_time_sysroot().unwrap();
-    args.push("--sysroot".to_owned());
-    args.push(sysroot);
-    debug!("args: {:?}", args);
-    let top_crate_name = std::env::var("FFI_CHECKER_TOP_CRATE_NAME").unwrap();
-    let top_crate_name = top_crate_name.replace("-", "_");
-    let mut is_deps = false;
-    if get_arg_flag_value("--crate-name").as_deref() == Some(&top_crate_name) {
-        // If we are analyzing the top crate, add args for `entry_collector`
-        // It will collect all the public functions and the main function (if the crate is a binary),
-        // and the FFI functions through Rust HIR
-        // let magic = std::env::var("FFI_CHECKER_ARGS").expect("missing FFI_CHECKER_ARGS");
-        // let ffi_checker_args: Vec<String> =
-        //     serde_json::from_str(&magic).expect("failed to deserialize FFI_CHECKER_ARGS");
-        // cmd.args(ffi_checker_args);
-    } else {
-        // If we are analyzing dependencies, set this environment variable so
-        // that `entry_collector` will only collect FFI functions
-        is_deps = true;
-        let log_file = match std::fs::File::create_new("ffi_checker.log") {
-            Ok(res) => res,
-            Err(_) => {
-                std::fs::File::open("ffi_checker.log").unwrap()
-            },
-        };
-        let mut callback = crate::callback::Callback { is_deps, log_file };
-        let compiler = rustc_driver::RunCompiler::new(&args, &mut callback);
-        compiler.run();
-    }
-    
 }
 
 #[link(name = "test1")]

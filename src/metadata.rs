@@ -3,7 +3,6 @@ use std::collections::BTreeMap;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
-
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct MetaData {
     pub packages: Option<Vec<Package>>,
@@ -48,7 +47,8 @@ pub struct Dependency {
     pub name: String,
     pub source: Option<String>,
     pub req: String,
-    pub kind: Option<String>, /// "dev" "build" "null"
+    pub kind: Option<String>,
+    /// "dev" "build" "null"
     pub rename: Option<String>,
     pub optional: bool,
     pub uses_default_features: bool,
@@ -60,7 +60,8 @@ pub struct Dependency {
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct Target {
-    pub kind: Option<Vec<String>>, /// "bin" "lib" "bench" "example" "test" "custom-build"
+    pub kind: Option<Vec<String>>,
+    /// "bin" "lib" "bench" "example" "test" "custom-build"
     pub crate_types: Option<Vec<String>>,
     pub name: String,
     pub src_path: String,
@@ -79,7 +80,7 @@ pub struct Resolve {
 }
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
-pub struct Node{
+pub struct Node {
     pub id: String,
     pub dependencies: Option<Vec<String>>,
     pub deps: Option<Vec<Dep>>,
