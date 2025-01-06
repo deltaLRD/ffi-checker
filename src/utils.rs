@@ -153,7 +153,13 @@ pub fn rustc_callback() {
         // If we are analyzing dependencies, set this environment variable so
         // that `entry_collector` will only collect FFI functions
         is_deps = true;
-        let mut callback = crate::callback::Callback { is_deps };
+        let log_file = match std::fs::File::create_new("ffi_checker.log") {
+            Ok(res) => res,
+            Err(_) => {
+                std::fs::File::open("ffi_checker.log").unwrap()
+            },
+        };
+        let mut callback = crate::callback::Callback { is_deps, log_file };
         let compiler = rustc_driver::RunCompiler::new(&args, &mut callback);
         compiler.run();
     }

@@ -1,20 +1,21 @@
+use std::{fs::File, io::Write};
+
 use rustc_ast;
 use rustc_driver;
 use rustc_hir;
 use rustc_interface;
 use rustc_middle;
 
-use log::debug;
 
-
-
+#[derive(Debug)]
 pub struct Callback {
     pub is_deps: bool,
+    pub log_file: File,
 }
 
 impl rustc_driver::Callbacks for Callback {
     fn config(&mut self, _config: &mut rustc_interface::interface::Config) {
-        pretty_env_logger::init();
+        
     }
 
     fn after_crate_root_parsing(
@@ -44,9 +45,15 @@ impl rustc_driver::Callbacks for Callback {
         let hir: rustc_middle::hir::map::Map<'_> = tcx.hir();
         for id in hir.items() {
             let item = hir.item(id);
-            if let rustc_hir::ItemKind::ForeignMod { abi, items } = item.kind {
-                debug!("abi: {:?}, items: {:?}", &abi, &items);
+            match self.log_file.write(format!("{:?}\n", &item).as_bytes()) {
+                Ok(_) => {},
+                Err(e) => {
+                    log::warn!("{}", e);
+                },
             }
+            // if let rustc_hir::ItemKind::ForeignMod { abi, items } = item.kind {
+            //     debug!("abi: {:?}, items: {:?}", &abi, &items);
+            // }
         }
 
         rustc_driver::Compilation::Continue
