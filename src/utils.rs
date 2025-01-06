@@ -40,6 +40,7 @@ pub fn arg_is_exist(name: &str) -> bool {
 }
 
 pub fn get_now_log_file() -> File {
+    let _ = std::fs::create_dir("./logs");
     let now = std::time::SystemTime::now();
     let now_str = now
         .duration_since(std::time::UNIX_EPOCH)
@@ -132,7 +133,7 @@ pub fn compile_targets(metadata: MetaData, ffi_args: &mut Vec<String>) {
         }
         // -Z unpretty=hir-tree
         // -Z unpretty=thir-tree
-        cmd.arg("--").arg("-Z").arg("unpretty=thir-tree");
+        // cmd.arg("--").arg("-Z").arg("unpretty=thir-tree");
         while let Some(arg) = args.next() {
             if arg == "--" {
                 break;
@@ -148,9 +149,12 @@ pub fn compile_targets(metadata: MetaData, ffi_args: &mut Vec<String>) {
             target.name.clone()
         );
 
-        let path = std::env::current_exe().expect("current executable path invalid");
+        let mut path = std::env::current_exe().expect("current executable path invalid");
+        path.set_file_name("checker");
         // cmd.env("RUSTC_WRAPPER", path.clone());
-        // info!("Setting env: RUSTC_WRAPPER={:?}", path);
+        cmd.env("RUSTC", path.clone());
+
+        info!("Setting env: RUSTC_WRAPPER={:?}", path);
 
         // linux only
         // generate llvm ir, llvm bc, mir
@@ -177,9 +181,6 @@ pub fn compile_targets(metadata: MetaData, ffi_args: &mut Vec<String>) {
                 str::from_utf8(&res.stderr).unwrap()
             );
             std::process::exit(res.status.code().unwrap_or(-1));
-        } else {
-            let output = str::from_utf8(&res.stdout).unwrap();
-            file_log(&output);
         }
     }
 }

@@ -33,7 +33,6 @@ fn main() {
     std::env::set_var("RUST_LOG", "debug");
     std::env::set_var("RUST_BACKTRACE", "1");
     pretty_env_logger::init_timed();
-
     debug!("args: {:?}", std::env::args());
     info!("start ffi checker");
 

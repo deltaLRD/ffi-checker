@@ -42,15 +42,15 @@ impl rustc_driver::Callbacks for Callback {
         let hir: rustc_middle::hir::map::Map<'_> = tcx.hir();
         for id in hir.items() {
             let item = hir.item(id);
-            match self.log_file.write(format!("{:?}\n", &item).as_bytes()) {
-                Ok(_) => {}
-                Err(e) => {
-                    log::warn!("{}", e);
+            
+            if let rustc_hir::ItemKind::ForeignMod { abi, items } = item.kind {
+                match self.log_file.write(format!("{:?}\n", &item).as_bytes()) {
+                    Ok(_) => {}
+                    Err(e) => {
+                        log::warn!("{}", e);
+                    }
                 }
             }
-            // if let rustc_hir::ItemKind::ForeignMod { abi, items } = item.kind {
-            //     debug!("abi: {:?}, items: {:?}", &abi, &items);
-            // }
         }
 
         rustc_driver::Compilation::Continue
