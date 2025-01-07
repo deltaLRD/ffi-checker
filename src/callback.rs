@@ -2,7 +2,7 @@ use std::{fs::File, io::Write};
 
 use rustc_ast;
 use rustc_driver;
-use rustc_hir;
+use rustc_hir::{self, ForeignItemRef, HirId};
 use rustc_interface;
 use rustc_middle;
 
@@ -10,6 +10,7 @@ use rustc_middle;
 pub struct Callback {
     pub is_deps: bool,
     pub log_file: File,
+    pub ffi_map: std::collections::BTreeMap<HirId, ForeignItemRef>,
 }
 
 impl rustc_driver::Callbacks for Callback {
@@ -33,7 +34,7 @@ impl rustc_driver::Callbacks for Callback {
 
     fn after_analysis<'tcx>(
         &mut self,
-        _compiler: &rustc_interface::interface::Compiler,
+        compiler: &rustc_interface::interface::Compiler,
         tcx: rustc_middle::ty::TyCtxt<'tcx>,
     ) -> rustc_driver::Compilation {
         if self.is_deps {
@@ -50,6 +51,10 @@ impl rustc_driver::Callbacks for Callback {
                         log::warn!("{}", e);
                     }
                 }
+                for item in items {
+                    self.ffi_map.insert(item.id.hir_id(), item.clone()).unwrap();
+                }
+                
             }
         }
 
