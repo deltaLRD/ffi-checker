@@ -12,6 +12,8 @@ extern crate rustc_middle;
 extern crate rustc_session;
 extern crate rustc_span;
 
+use std::collections::BTreeMap;
+
 use rustc_session::EarlyDiagCtxt;
 use rustc_session::config::ErrorOutputType;
 
@@ -22,6 +24,6 @@ fn main() {
     let args = rustc_driver::args::raw_args(&early_dcx)
         .unwrap_or_else(|_| std::process::exit(rustc_driver::EXIT_FAILURE));
     rustc_driver::install_ctrlc_handler();
-    let mut callback = ffi_checker::callback::Callback{is_deps: false, log_file: ffi_checker::utils::get_now_log_file()};
+    let mut callback = ffi_checker::callback::Callback{is_deps: false, log_file: ffi_checker::utils::get_now_log_file(), ffi_map: BTreeMap::new()};
     rustc_driver::RunCompiler::new(&args, &mut callback).run();
 }

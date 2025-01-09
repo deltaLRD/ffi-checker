@@ -2,6 +2,7 @@
 extern crate rustc_driver;
 use core::str;
 use ffi_checker::{metadata::MetaData, utils};
+use libc::c_int;
 use std::process::Command;
 
 use ffi_checker::utils::compile_targets;
@@ -40,7 +41,15 @@ fn main() {
     let mut ffi_args = Vec::new();
     compile_targets(metadata, &mut ffi_args);
     debug!("{:?}", &ffi_args);
-    unsafe {
-        utils::greet();
-    }
+    // unsafe {
+    //     utils::greet();
+    //     let ptr = utils::get_n_mem(128) as *mut c_int;
+    //     ptr.write(20);
+    //     ptr.offset(1).write(30);
+    //     libc::free(ptr as *mut libc::c_void);
+    //     let ptr_2 = utils::get_n_mem(128) as *mut c_int;
+    //     ptr.write(40);
+    //     println!("{:?}:{}", &ptr, &ptr.read());
+    //     println!("{:?}:{}", &ptr_2, &ptr_2.read());
+    // }
 }

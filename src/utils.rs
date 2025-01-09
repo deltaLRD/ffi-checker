@@ -153,17 +153,18 @@ pub fn compile_targets(metadata: MetaData, ffi_args: &mut Vec<String>) {
         path.set_file_name("checker");
         // cmd.env("RUSTC_WRAPPER", path.clone());
         cmd.env("RUSTC", path.clone());
+        cmd.env("CC", "clang");
 
-        info!("Setting env: RUSTC_WRAPPER={:?}", path);
+        info!("Setting env: RUSTC={:?}", path);
 
         // linux only
         // generate llvm ir, llvm bc, mir
         cmd.env(
             "RUSTFLAGS",
-            "-Clinker-plugin-lto -Clinker=clang -Clink-arg=-fuse-ld=lld --emit=llvm-ir,llvm-bc,mir",
+            "-Clinker-plugin-lto -Clinker=clang -Clink-arg=-fuse-ld=lld --emit=asm,dep-info,link,llvm-ir,llvm-bc,metadata,mir,obj",
         );
         cmd.env("CC", "clang");
-        cmd.env("CFLAGS", "-flto=thin");
+        cmd.env("CFLAGS", "-flto=thin -emit-llvm");
         cmd.env("LDFLAGS", "-Wl,-O2,--as-needed");
 
         info!("Command line: {:?}", cmd);
@@ -202,7 +203,7 @@ mod tests {
             let ptr: *mut libc::c_void = get_n_mem(1024);
             libc::free(ptr);
             let ptr: *mut libc::c_int = ptr as *mut libc::c_int;
-            *ptr = 10;
+            // ptr.write(10);
         }
     }
 }

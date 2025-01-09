@@ -41,9 +41,13 @@ impl rustc_driver::Callbacks for Callback {
             return rustc_driver::Compilation::Continue;
         }
         let hir: rustc_middle::hir::map::Map<'_> = tcx.hir();
+        
         for id in hir.items() {
             let item = hir.item(id);
-            
+            for def_id in tcx.mir_keys(()).iter() {
+                let body = tcx.optimized_mir(*def_id);
+                
+            }
             if let rustc_hir::ItemKind::ForeignMod { abi, items } = item.kind {
                 match self.log_file.write(format!("{:?}\n", &item).as_bytes()) {
                     Ok(_) => {}
@@ -52,7 +56,11 @@ impl rustc_driver::Callbacks for Callback {
                     }
                 }
                 for item in items {
-                    self.ffi_map.insert(item.id.hir_id(), item.clone()).unwrap();
+                    // self.ffi_map.insert(item.id.hir_id(), item.clone()).unwrap();
+                    let foreign_item_id = item.id;
+                    let foreign_item = hir.foreign_item(foreign_item_id);
+                    let def_id = foreign_item_id.owner_id.to_def_id();
+                    
                 }
                 
             }
