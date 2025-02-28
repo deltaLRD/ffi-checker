@@ -161,7 +161,7 @@ pub fn compile_targets(metadata: MetaData, ffi_args: &mut Vec<String>) {
         // generate llvm ir, llvm bc, mir
         cmd.env(
             "RUSTFLAGS",
-            "-Clinker-plugin-lto -Clinker=clang -Clink-arg=-fuse-ld=lld --emit=asm,dep-info,link,llvm-ir,llvm-bc,metadata,mir,obj",
+            "-Clinker=clang -Clink-arg=-fuse-ld=lld --emit=asm,dep-info,link,llvm-ir,llvm-bc,metadata,mir,obj",
         );
         cmd.env("CC", "clang");
         cmd.env("CFLAGS", "-flto=thin -emit-llvm");
