@@ -161,7 +161,9 @@ pub fn compile_targets(metadata: MetaData, ffi_args: &mut Vec<String>) {
         // generate llvm ir, llvm bc, mir
         cmd.env(
             "RUSTFLAGS",
-            "-Clinker=clang -Clink-arg=-fuse-ld=lld --emit=asm,dep-info,link,llvm-ir,llvm-bc,metadata,mir,obj",
+            "-Clinker=clang -Clink-arg=-fuse-ld=lld --emit=llvm-ir",
+            // "-Clinker=clang -Clink-arg=-fuse-ld=lld --emit=llvm-ir,llvm-bc",
+            // "-Clinker=clang -Clink-arg=-fuse-ld=lld --emit=asm,dep-info,link,llvm-ir,llvm-bc,metadata,mir,obj",
         );
         cmd.env("CC", "clang");
         cmd.env("CFLAGS", "-flto=thin -emit-llvm");
@@ -184,6 +186,11 @@ pub fn compile_targets(metadata: MetaData, ffi_args: &mut Vec<String>) {
             std::process::exit(res.status.code().unwrap_or(-1));
         }
     }
+}
+
+pub fn static_analysis(ffi_args: &Vec<String>) {
+    info!("start static analysis");
+    debug!("ffi_args in static_analysis:{:?}", ffi_args);
 }
 
 #[link(name = "test1")]
