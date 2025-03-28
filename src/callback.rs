@@ -1,34 +1,25 @@
-use std::{collections::HashSet, fs::File, io::Write, path::Path, str};
-
-use rustc_ast;
+use log::info;
+use rustc_ast::{self, ast};
 use rustc_driver;
 use rustc_hir::{self, ForeignItemRef, HirId};
-use rustc_interface;
-use rustc_middle;
+use rustc_middle::{self, ty::TyCtxt};
+use std::{collections::HashSet, fs::File, io::Write, path::Path};
 
 use crate::utils::get_arg_flag_value;
 
 #[derive(Debug)]
 pub struct Callback {
     pub is_deps: bool,
-    pub log_file: File,
     pub ffi_map: std::collections::BTreeMap<HirId, ForeignItemRef>,
-}
-
-impl Callback {
-    pub fn log(&mut self, msg: &str) {
-        self.log_file.write(msg.as_bytes()).unwrap();
-        self.log_file.flush().unwrap();
-    }
 }
 
 impl rustc_driver::Callbacks for Callback {
     fn config(&mut self, _config: &mut rustc_interface::interface::Config) {}
 
-    fn after_crate_root_parsing(
+    fn after_crate_root_parsing<'tcx>(
         &mut self,
         _compiler: &rustc_interface::interface::Compiler,
-        _queries: &mut rustc_ast::Crate,
+        _krate: &mut ast::Crate,
     ) -> rustc_driver::Compilation {
         rustc_driver::Compilation::Continue
     }
@@ -36,16 +27,23 @@ impl rustc_driver::Callbacks for Callback {
     fn after_expansion<'tcx>(
         &mut self,
         _compiler: &rustc_interface::interface::Compiler,
-        _tcx: rustc_middle::ty::TyCtxt<'tcx>,
+        _tcx: TyCtxt<'tcx>,
     ) -> rustc_driver::Compilation {
         rustc_driver::Compilation::Continue
     }
 
     fn after_analysis<'tcx>(
         &mut self,
-        compiler: &rustc_interface::interface::Compiler,
-        tcx: rustc_middle::ty::TyCtxt<'tcx>,
+        _compiler: &rustc_interface::interface::Compiler,
+        tcx: TyCtxt<'tcx>,
     ) -> rustc_driver::Compilation {
+        // queries
+        //     .global_ctxt()
+        //     .unwrap()
+        //     .borrow()
+        //     .enter(|tcx| self.run_analysis(compiler, tcx));
+
+
         // if self.is_deps {
         //     return rustc_driver::Compilation::Continue;
         // }
@@ -55,19 +53,18 @@ impl rustc_driver::Callbacks for Callback {
         if should_skip.contains(&top_crate_name.as_str()) {
             return rustc_driver::Compilation::Continue;
         }
-        self.log(&top_crate_name);
-        self.log("\n");
+        info!("{:?}", &top_crate_name);
         let mut pub_funcs = HashSet::new();
         let mut ffi_funcs = HashSet::new();
-
+        // queries.global_ctxt().unwrap().steal().hir_arena
         if let Some((entry_def_id, entry_fn_type)) = tcx.entry_fn(()) {
             // collecting entry function like main function
-            self.log(&format!(
+            info!(
                 "id: {:?}\tentry_fn_type: {:?}\n",
                 &entry_def_id, &entry_fn_type
-            ));
+            );
             let item_name = tcx.item_name(entry_def_id).to_ident_string();
-            self.log(&format!("{:?}\n", &item_name));
+            info!("{:?}\n", &item_name);
             pub_funcs.insert(item_name);
         }
 
@@ -82,18 +79,18 @@ impl rustc_driver::Callbacks for Callback {
             let kind = tcx.def_kind(def_id);
             if kind.is_fn_like() && tcx.local_visibility(def_id).is_public() {
                 let ident = tcx.item_ident(def_id.into());
-                self.log(&format!(
+                info!(
                     "public_function:\nid: {:#?}\nident: {:#?}\nkind: {:#?}\n",
                     &def_id, &ident, &kind
-                ));
+                );
                 pub_funcs.insert(ident.to_string());
             }
             if kind.is_fn_like() && tcx.is_foreign_item(def_id) {
                 let ident = tcx.item_ident(def_id.into());
-                self.log(&format!(
+                info!(
                     "ffi_function:\nid: {:#?}\nident: {:#?}\nkind: {:#?}\n",
                     &def_id, &ident, &kind
-                ));
+                );
                 ffi_funcs.insert(ident);
             }
         }
@@ -118,3 +115,23 @@ impl rustc_driver::Callbacks for Callback {
         rustc_driver::Compilation::Continue
     }
 }
+
+// impl Callback {
+//     fn run_analysis<'tcx, 'compiler>(
+//         &mut self,
+//         _compiler: &rustc_interface::interface::Compiler,
+//         tcx: TyCtxt<'tcx>,
+//     ) {
+//         let top_crate_name =
+//             get_arg_flag_value("--crate-name").expect("arg --crate-name not found");
+//         let should_skip = vec!["build_script_build"];
+//         if should_skip.contains(&top_crate_name.as_str()) {
+//             return;
+//         }
+//         info!("{:?}", &top_crate_name);
+//         let mut pub_funcs = HashSet::new();
+//         let mut ffi_funcs = HashSet::new();
+
+//         if let Some((entry_def_id, _)) = tcx.
+//     }
+// }

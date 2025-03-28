@@ -13,11 +13,16 @@ extern crate rustc_session;
 extern crate rustc_span;
 
 use std::collections::BTreeMap;
-
+use simple_file_logger::init_logger;
+use log::{info, debug};
 use rustc_session::config::ErrorOutputType;
 use rustc_session::EarlyDiagCtxt;
 
 fn main() {
+    std::env::set_var("RUST_LOG", "debug");
+    std::env::set_var("RUST_BACKTRACE", "1");
+    init_logger!("checker.log").unwrap();
+    debug!("{:?}", std::env::args());
     let early_dcx = EarlyDiagCtxt::new(ErrorOutputType::default());
     // let args = rustc_driver::args::raw_args(&early_dcx)
     //     .unwrap_or_else(|_| std::process::exit(rustc_driver::EXIT_FAILURE));
@@ -26,10 +31,9 @@ fn main() {
     
     let mut callback = ffi_checker::callback::Callback {
         is_deps: false,
-        log_file: ffi_checker::utils::get_now_log_file(),
         ffi_map: BTreeMap::new(),
     };
 
-    callback.log(&format!("args: {:?}\n", args));
+    info!("args: {:?}\n", args);
     rustc_driver::run_compiler(&args, &mut callback);
 }

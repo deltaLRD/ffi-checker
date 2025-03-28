@@ -15,4 +15,4 @@ extern crate rustc_span;
 pub mod callback;
 pub mod metadata;
 pub mod utils;
-pub mod analysis_option;
+// pub mod analysis;

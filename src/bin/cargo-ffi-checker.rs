@@ -1,8 +1,18 @@
 #![feature(rustc_private)]
+extern crate rustc_ast;
+extern crate rustc_ast_pretty;
+extern crate rustc_data_structures;
 extern crate rustc_driver;
+extern crate rustc_error_codes;
+extern crate rustc_errors;
+extern crate rustc_hash;
+extern crate rustc_hir;
+extern crate rustc_interface;
+extern crate rustc_middle;
+extern crate rustc_session;
+extern crate rustc_span;
 use core::str;
-use ffi_checker::{metadata::MetaData, utils::{self, static_analysis}};
-use libc::c_int;
+use ffi_checker::{metadata::MetaData, utils::{self, generate_llvm_bitcode, static_analysis}};
 use std::process::Command;
 
 use ffi_checker::utils::compile_targets;
@@ -42,7 +52,9 @@ fn main() {
     compile_targets(metadata, &mut ffi_args);
     debug!("{:?}", &ffi_args);
 
-    static_analysis(&ffi_args);
+    generate_llvm_bitcode();
+
+    // static_analysis(&ffi_args);
     // unsafe {
     //     utils::greet();
     //     let ptr = utils::get_n_mem(128) as *mut c_int;

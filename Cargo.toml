@@ -12,11 +12,17 @@ name = "checker"
 [dependencies]
 pretty_env_logger = "0.5.0"
 log = "0.4.22"
-serde = { version = "1.0", features = ["derive"] }
+serde = { version = "1", features = ["derive"] }
 serde_json = "1.0"
 libc = "0.2"
 anyhow = "1"
 infer = "0.19.0"
+walkdir = "2"
+simple_file_logger = "0.4.2"
+# llvm-ir = { version = "0.11.3", features = ["llvm-17"] }
+# llvm-ir-analysis = { version = "0.4.0", features = ["llvm-17"] }
+# rustc-demangle = "0.1"
+# either = "1.15.0"
 
 [build-dependencies]
 cc = { version = "1.2", features = ["parallel"] }
