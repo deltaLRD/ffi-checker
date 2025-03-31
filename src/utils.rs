@@ -118,13 +118,14 @@ pub fn get_current_crate(metadata: MetaData) -> Option<Package> {
     None
 }
 
-pub fn compile_targets(metadata: MetaData, ffi_args: &mut Vec<String>) {
+pub fn compile_targets(metadata: MetaData, ffi_args: &mut Vec<String>, target_names: &mut Vec<String>) {
     let current_crate = get_current_crate(metadata.clone()).unwrap();
     for target in current_crate.targets.unwrap().iter() {
         let mut cmd = Command::new("cargo");
         cmd.arg("rustc");
         let mut args = std::env::args().skip(2);
         let kind = target.clone().kind.unwrap();
+        debug!("target: {:?}", target);
         match kind[0].as_str() {
             "bin" => {
                 cmd
@@ -138,9 +139,8 @@ pub fn compile_targets(metadata: MetaData, ffi_args: &mut Vec<String>) {
             }
             _ => continue,
         }
-        // -Z unpretty=hir-tree
-        // -Z unpretty=thir-tree
-        // cmd.arg("--").arg("-Z").arg("unpretty=thir-tree");
+        target_names.push(target.name.clone());
+
         while let Some(arg) = args.next() {
             if arg == "--" {
                 break;
@@ -168,17 +168,15 @@ pub fn compile_targets(metadata: MetaData, ffi_args: &mut Vec<String>) {
         // generate llvm ir, llvm bc, mir
         cmd.env(
             "RUSTFLAGS",
-            "-Clinker=clang -Clink-arg=-fuse-ld=lld --emit=llvm-bc",
+            "--emit=llvm-bc",
             // "-Clinker=clang -Clink-arg=-fuse-ld=lld --emit=llvm-ir,llvm-bc",
             // "-Clinker=clang -Clink-arg=-fuse-ld=lld --emit=asm,dep-info,link,llvm-ir,llvm-bc,metadata,mir,obj",
         );
-        cmd.env("CC", "clang");
-        cmd.env("CFLAGS", "-flto=thin -emit-llvm");
-        cmd.env("LDFLAGS", "-Wl,-O2,--as-needed");
+        // cmd.env("CC", "clang");
+        // cmd.env("CFLAGS", "-emit-llvm");
+        // cmd.env("LDFLAGS", "-Wl,-O2,--as-needed");
 
         info!("Command line: {:?}", cmd);
-        // cmd.stderr(std::io::stderr());
-        // cmd.stdout(std::io::stdout());
         let res = cmd.output().unwrap();
 
         if !res.status.success() {
@@ -196,55 +194,35 @@ pub fn compile_targets(metadata: MetaData, ffi_args: &mut Vec<String>) {
     }
 }
 
-pub fn generate_llvm_bitcode() {
+pub fn generate_llvm_bitcode(target_names: &Vec<String>) {
+    debug!("target_names: {:?}", target_names);
     let mut llvm_ir_path = Vec::new();
     let root_path = std::env::current_dir().unwrap();
     let deps_path = root_path.join("target").join("debug").join("deps");
     for entry in WalkDir::new(deps_path.clone()) {
         let entry = entry.unwrap();
         let file_name = entry.file_name().to_str().unwrap().to_string();
-        if file_name.ends_with(".ll") {
-            let mut llvm_as_cmd = Command::new("llvm-as");
-            let mut bc_name = file_name
-                .chars()
-                .take(file_name.len() - 3)
-                .collect::<String>();
-            bc_name.push_str(".bc");
-            llvm_as_cmd.arg(deps_path.join(file_name));
-            llvm_as_cmd.arg("-o");
-            llvm_as_cmd.arg(deps_path.join(&bc_name).to_str().unwrap());
-            let res = llvm_as_cmd.output().unwrap();
-            if !res.status.success() {
-                warn!("Command line failed with status: {}", res.status);
-                println!(
-                    "Command line stdout: {}",
-                    str::from_utf8(&res.stdout).unwrap()
-                );
-                println!(
-                    "Command line stderr: {}",
-                    str::from_utf8(&res.stderr).unwrap()
-                );
-                std::process::exit(res.status.code().unwrap_or(-1));
-            }
-            llvm_ir_path.push(deps_path.join(&bc_name));
-        } else if file_name.ends_with(".bc") {
-            llvm_ir_path.push(deps_path.join(&file_name));
-        }
-    }
-    let build_path = root_path.join("target").join("debug").join("build");
-    for entry in WalkDir::new(build_path.clone())
-        .follow_links(true)
-        .into_iter()
-        .filter_map(|e| e.ok())
-    {
-        if entry.path().is_file() {
-            if let Some(kind) = infer::get_from_path(entry.path()).unwrap() {
-                if kind.mime_type() == "application/x-llvm" {
-                    llvm_ir_path.push(entry.path().to_path_buf());
-                }
+        for target_name in target_names {
+            if file_name.starts_with(&target_name.replace("-", "_")) && file_name.ends_with(".bc") {
+                llvm_ir_path.push(deps_path.join(&file_name));
             }
         }
+        
     }
+    // let build_path = root_path.join("target").join("debug").join("build");
+    // for entry in WalkDir::new(build_path.clone())
+    //     .follow_links(true)
+    //     .into_iter()
+    //     .filter_map(|e| e.ok())
+    // {
+    //     if entry.path().is_file() {
+    //         if let Some(kind) = infer::get_from_path(entry.path()).unwrap() {
+    //             if kind.mime_type() == "application/x-llvm" {
+    //                 llvm_ir_path.push(entry.path().to_path_buf());
+    //             }
+    //         }
+    //     }
+    // }
 
     // write all to a file
     let file_path = Path::new("target/bitcode_paths");
@@ -260,27 +238,6 @@ pub fn generate_llvm_bitcode() {
     for bitcode_path in llvm_ir_path.clone() {
         file.write_all(format!("{}\n", bitcode_path.to_string_lossy()).as_bytes())
             .unwrap();
-    }
-
-    let mut linker = Command::new("llvm-link");
-    for bc_file in llvm_ir_path {
-        linker.arg(bc_file);
-    }
-    linker.arg("-o");
-    let combined_bc_path = root_path.join("debug").join("combined.bc");
-    linker.arg(combined_bc_path);
-    let res = linker.output().unwrap();
-    if !res.status.success() {
-        warn!("Command line failed with status: {}", res.status);
-        println!(
-            "Command line stdout: {}",
-            str::from_utf8(&res.stdout).unwrap()
-        );
-        println!(
-            "Command line stderr: {}",
-            str::from_utf8(&res.stderr).unwrap()
-        );
-        std::process::exit(res.status.code().unwrap_or(-1));
     }
 }
 
@@ -330,7 +287,7 @@ mod tests {
             let ptr: *mut libc::c_void = get_n_mem(1024);
             libc::free(ptr);
             let ptr: *mut libc::c_int = ptr as *mut libc::c_int;
-            // ptr.write(10);
+            ptr.write(10);
         }
     }
 }

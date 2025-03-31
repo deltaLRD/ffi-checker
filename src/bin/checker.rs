@@ -12,8 +12,7 @@ extern crate rustc_middle;
 extern crate rustc_session;
 extern crate rustc_span;
 
-use std::collections::BTreeMap;
-use simple_file_logger::init_logger;
+// use simple_file_logger::init_logger;
 use log::{info, debug};
 use rustc_session::config::ErrorOutputType;
 use rustc_session::EarlyDiagCtxt;
@@ -21,19 +20,21 @@ use rustc_session::EarlyDiagCtxt;
 fn main() {
     std::env::set_var("RUST_LOG", "debug");
     std::env::set_var("RUST_BACKTRACE", "1");
-    init_logger!("checker.log").unwrap();
+    // init_logger!("checker.log").unwrap();
+    pretty_env_logger::init_timed();
     debug!("{:?}", std::env::args());
     let early_dcx = EarlyDiagCtxt::new(ErrorOutputType::default());
-    // let args = rustc_driver::args::raw_args(&early_dcx)
-    //     .unwrap_or_else(|_| std::process::exit(rustc_driver::EXIT_FAILURE));
-    let args = rustc_driver::args::raw_args(&early_dcx);
-    rustc_driver::install_ctrlc_handler();
+    let args = rustc_driver::args::arg_expand_all(&early_dcx, std::env::args().map(|item|item).collect::<Vec<_>>().as_slice());
+        // .unwrap_or_else(|_| std::process::exit(rustc_driver::EXIT_FAILURE));
+    // let args = rustc_driver::args::raw_args(&early_dcx);
+    // rustc_driver::r
     
     let mut callback = ffi_checker::callback::Callback {
         is_deps: false,
-        ffi_map: BTreeMap::new(),
+        // ffi_map: BTreeMap::new(),
     };
 
     info!("args: {:?}\n", args);
-    rustc_driver::run_compiler(&args, &mut callback);
+    let runner = rustc_driver::RunCompiler::new(&args, &mut callback);
+    let _ = runner.run();
 }

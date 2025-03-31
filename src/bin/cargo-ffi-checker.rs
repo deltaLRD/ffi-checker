@@ -13,6 +13,8 @@ extern crate rustc_session;
 extern crate rustc_span;
 use core::str;
 use ffi_checker::{metadata::MetaData, utils::{self, generate_llvm_bitcode, static_analysis}};
+use libc::c_int;
+use ffi_checker::unsafe_func;
 use std::process::Command;
 
 use ffi_checker::utils::compile_targets;
@@ -44,26 +46,19 @@ fn main() {
     std::env::set_var("RUST_LOG", "debug");
     std::env::set_var("RUST_BACKTRACE", "1");
     pretty_env_logger::init_timed();
-    debug!("args: {:?}", std::env::args());
+    // debug!("args: {:?}", std::env::args());
     info!("start ffi checker");
 
     let metadata = get_cargo_metadata().unwrap();
     let mut ffi_args = Vec::new();
-    compile_targets(metadata, &mut ffi_args);
+    let mut target_name = Vec::new();
+    compile_targets(metadata, &mut ffi_args, &mut target_name);
     debug!("{:?}", &ffi_args);
 
-    generate_llvm_bitcode();
+    generate_llvm_bitcode(&target_name);
 
     // static_analysis(&ffi_args);
     // unsafe {
-    //     utils::greet();
-    //     let ptr = utils::get_n_mem(128) as *mut c_int;
-    //     ptr.write(20);
-    //     ptr.offset(1).write(30);
-    //     libc::free(ptr as *mut libc::c_void);
-    //     let ptr_2 = utils::get_n_mem(128) as *mut c_int;
-    //     ptr.write(40);
-    //     println!("{:?}:{}", &ptr, &ptr.read());
-    //     println!("{:?}:{}", &ptr_2, &ptr_2.read());
+    //     unsafe_func();
     // }
 }
