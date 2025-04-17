@@ -1,4 +1,3 @@
-#![feature(fs_try_exists)]
 use crate::metadata::{MetaData, Package};
 use core::str;
 use log::{debug, info, warn};
@@ -168,7 +167,7 @@ pub fn compile_targets(metadata: MetaData, ffi_args: &mut Vec<String>, target_na
         // generate llvm ir, llvm bc, mir
         cmd.env(
             "RUSTFLAGS",
-            "--emit=llvm-bc",
+            "--emit=llvm-bc,llvm-ir -g",
             // "-Clinker=clang -Clink-arg=-fuse-ld=lld --emit=llvm-ir,llvm-bc",
             // "-Clinker=clang -Clink-arg=-fuse-ld=lld --emit=asm,dep-info,link,llvm-ir,llvm-bc,metadata,mir,obj",
         );

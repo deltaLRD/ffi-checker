@@ -25,13 +25,10 @@ fn main() {
     debug!("{:?}", std::env::args());
     let early_dcx = EarlyDiagCtxt::new(ErrorOutputType::default());
     let args = rustc_driver::args::arg_expand_all(&early_dcx, std::env::args().map(|item|item).collect::<Vec<_>>().as_slice());
-        // .unwrap_or_else(|_| std::process::exit(rustc_driver::EXIT_FAILURE));
-    // let args = rustc_driver::args::raw_args(&early_dcx);
-    // rustc_driver::r
+
     
     let mut callback = ffi_checker::callback::Callback {
         is_deps: false,
-        // ffi_map: BTreeMap::new(),
     };
 
     info!("args: {:?}\n", args);

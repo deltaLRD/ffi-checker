@@ -12,9 +12,7 @@ extern crate rustc_middle;
 extern crate rustc_session;
 extern crate rustc_span;
 use core::str;
-use ffi_checker::{metadata::MetaData, utils::{self, generate_llvm_bitcode, static_analysis}};
-use libc::c_int;
-use ffi_checker::unsafe_func;
+use ffi_checker::{metadata::MetaData, utils::generate_llvm_bitcode};
 use std::process::Command;
 
 use ffi_checker::utils::compile_targets;
@@ -57,8 +55,4 @@ fn main() {
 
     generate_llvm_bitcode(&target_name);
 
-    // static_analysis(&ffi_args);
-    // unsafe {
-    //     unsafe_func();
-    // }
 }
