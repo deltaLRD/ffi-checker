@@ -106,91 +106,102 @@ pub fn get_proj_path() -> String {
     res.root.to_owned()
 }
 
-pub fn get_current_crate(metadata: MetaData) -> Option<Package> {
+pub fn get_current_crate(metadata: MetaData) -> Vec<Package> {
     let proj_path = get_proj_path();
     let proj_path = std::path::Path::new(&proj_path).parent().unwrap();
-    
+
     info!("prj_path: {:?}", &proj_path);
+    let mut packages = vec![];
     for package in metadata.packages.unwrap().iter() {
-        if package.manifest_path.starts_with(proj_path.to_str().unwrap()) {
-            return Some(package.clone());
+        if package
+            .manifest_path
+            .starts_with(proj_path.to_str().unwrap())
+        {
+            packages.push(package.clone());
         }
     }
-    None
+    packages
 }
 
-pub fn compile_targets(metadata: MetaData, ffi_args: &mut Vec<String>, target_names: &mut Vec<String>) {
-    let current_crate = get_current_crate(metadata.clone()).unwrap();
-    for target in current_crate.targets.unwrap().iter() {
-        let mut cmd = Command::new("cargo");
-        cmd.arg("rustc");
-        let mut args = std::env::args().skip(2);
-        let kind = target.clone().kind.unwrap();
-        debug!("target: {:?}", target);
-        match kind[0].as_str() {
-            "bin" => {
-                cmd
-                    // .arg("--crate-type")
-                    .arg("--bin")
-                    // .arg("--crate-name")
-                    .arg(target.name.clone());
+pub fn compile_targets(
+    metadata: MetaData,
+    ffi_args: &mut Vec<String>,
+    target_names: &mut Vec<String>,
+) {
+    let crates = get_current_crate(metadata.clone());
+    for current_crate in crates {
+        for target in current_crate.targets.unwrap().iter() {
+            let mut cmd = Command::new("cargo");
+            cmd.arg("rustc");
+            cmd.arg("-p").arg(current_crate.name.clone());
+            let mut args = std::env::args().skip(2);
+            let kind = target.clone().kind.unwrap();
+            debug!("target: {:?}", target);
+            match kind[0].as_str() {
+                "bin" => {
+                    cmd
+                        // .arg("--crate-type")
+                        .arg("--bin")
+                        // .arg("--crate-name")
+                        .arg(target.name.clone());
+                }
+                "lib" => {
+                    cmd.arg("--lib");
+                }
+                _ => continue,
             }
-            "lib" => {
-                cmd.arg("--lib");
+            target_names.push(target.name.clone());
+
+            while let Some(arg) = args.next() {
+                if arg == "--" {
+                    break;
+                }
+                cmd.arg(arg);
             }
-            _ => continue,
-        }
-        target_names.push(target.name.clone());
 
-        while let Some(arg) = args.next() {
-            if arg == "--" {
-                break;
-            }
-            cmd.arg(arg);
-        }
+            ffi_args.extend(args);
 
-        ffi_args.extend(args);
-
-        cmd.env("FFI_CHECKER_TOP_CRATE_NAME", target.name.clone());
-        info!(
-            "Setting env: FFI_CHECKER_TOP_CRATE_NAME={}",
-            target.name.clone()
-        );
-
-        let mut path = std::env::current_exe().expect("current executable path invalid");
-        path.set_file_name("checker");
-        // cmd.env("RUSTC_WRAPPER", path.clone());
-        cmd.env("RUSTC", path.clone());
-        cmd.env("CC", "clang");
-
-        info!("Setting env: RUSTC={:?}", path);
-
-        // linux only
-        // generate llvm ir, llvm bc, mir
-        cmd.env(
-            "RUSTFLAGS",
-            "--emit=llvm-bc,llvm-ir -g",
-            // "-Clinker=clang -Clink-arg=-fuse-ld=lld --emit=llvm-ir,llvm-bc",
-            // "-Clinker=clang -Clink-arg=-fuse-ld=lld --emit=asm,dep-info,link,llvm-ir,llvm-bc,metadata,mir,obj",
-        );
-        // cmd.env("CC", "clang");
-        // cmd.env("CFLAGS", "-emit-llvm");
-        // cmd.env("LDFLAGS", "-Wl,-O2,--as-needed");
-
-        info!("Command line: {:?}", cmd);
-        let res = cmd.output().unwrap();
-
-        if !res.status.success() {
-            warn!("Command line failed with status: {}", res.status);
-            println!(
-                "Command line stdout: {}",
-                str::from_utf8(&res.stdout).unwrap()
+            cmd.env("FFI_CHECKER_TOP_CRATE_NAME", target.name.clone());
+            info!(
+                "Setting env: FFI_CHECKER_TOP_CRATE_NAME={}",
+                target.name.clone()
             );
-            println!(
-                "Command line stderr: {}",
-                str::from_utf8(&res.stderr).unwrap()
+
+            let mut path = std::env::current_exe().expect("current executable path invalid");
+            path.set_file_name("checker");
+            // cmd.env("RUSTC_WRAPPER", path.clone());
+            cmd.env("RUSTC", path.clone());
+            cmd.env("CC", "clang");
+
+            info!("Setting env: RUSTC={:?}", path);
+
+            // linux only
+            // generate llvm ir, llvm bc, mir
+            cmd.env(
+                "RUSTFLAGS",
+                "--emit=llvm-bc,llvm-ir -g",
+                // "-Clinker=clang -Clink-arg=-fuse-ld=lld --emit=llvm-ir,llvm-bc",
+                // "-Clinker=clang -Clink-arg=-fuse-ld=lld --emit=asm,dep-info,link,llvm-ir,llvm-bc,metadata,mir,obj",
             );
-            std::process::exit(res.status.code().unwrap_or(-1));
+            // cmd.env("CC", "clang");
+            // cmd.env("CFLAGS", "-emit-llvm");
+            // cmd.env("LDFLAGS", "-Wl,-O2,--as-needed");
+
+            info!("Command line: {:?}", cmd);
+            let res = cmd.output().unwrap();
+
+            if !res.status.success() {
+                warn!("Command line failed with status: {}", res.status);
+                println!(
+                    "Command line stdout: {}",
+                    str::from_utf8(&res.stdout).unwrap()
+                );
+                println!(
+                    "Command line stderr: {}",
+                    str::from_utf8(&res.stderr).unwrap()
+                );
+                std::process::exit(res.status.code().unwrap_or(-1));
+            }
         }
     }
 }
@@ -208,7 +219,6 @@ pub fn generate_llvm_bitcode(target_names: &Vec<String>) {
                 llvm_ir_path.push(deps_path.join(&file_name));
             }
         }
-        
     }
     // let build_path = root_path.join("target").join("debug").join("build");
     // for entry in WalkDir::new(build_path.clone())
