@@ -108,9 +108,11 @@ pub fn get_proj_path() -> String {
 
 pub fn get_current_crate(metadata: MetaData) -> Option<Package> {
     let proj_path = get_proj_path();
-    info!("prj_path: {}", &proj_path);
+    let proj_path = std::path::Path::new(&proj_path).parent().unwrap();
+    
+    info!("prj_path: {:?}", &proj_path);
     for package in metadata.packages.unwrap().iter() {
-        if package.manifest_path.eq(&proj_path) {
+        if package.manifest_path.starts_with(proj_path.to_str().unwrap()) {
             return Some(package.clone());
         }
     }
