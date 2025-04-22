@@ -150,6 +150,7 @@ pub fn compile_targets(
                 }
                 _ => continue,
             }
+            cmd.arg("--").arg("-C").arg("opt-level=0");
             target_names.push(target.name.clone());
 
             while let Some(arg) = args.next() {
@@ -179,7 +180,7 @@ pub fn compile_targets(
             // generate llvm ir, llvm bc, mir
             cmd.env(
                 "RUSTFLAGS",
-                "--emit=llvm-bc,llvm-ir -g",
+                "--emit=llvm-bc,llvm-ir -g -C link-dead-code=y",
                 // "-Clinker=clang -Clink-arg=-fuse-ld=lld --emit=llvm-ir,llvm-bc",
                 // "-Clinker=clang -Clink-arg=-fuse-ld=lld --emit=asm,dep-info,link,llvm-ir,llvm-bc,metadata,mir,obj",
             );
